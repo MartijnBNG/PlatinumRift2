@@ -1,16 +1,14 @@
 import sys
 import math
 
-zoneList = []
-moveList = ""
-
 class Zone:
-    platinumValue = 0.5
-    myPodValue = -0.9
-    enemyPodValue = 0.1
-    mySpaceValue = -0.9
-    enemySpaceValue = 0.1
-    neutralSpaceValue = 0.1
+    platinumValue = 1.5
+    myPodValue = 0.0
+    enemyPodValue = 1.1
+    mySpaceValue = 0.0
+    enemySpaceValue = 3.0
+    neutralSpaceValue = 2.0
+    derivableValue = 0.1
     
     def __init__(self, zone_id, platinum_source):
         self.linkList = []
@@ -21,6 +19,7 @@ class Zone:
         self.enemyPods = 0
         self.visible = 0
         self.baseValue = 0.0
+        self.derivedValue = 0.0
         #print("Zone created: {}".format(self.zone_id), file=sys.stderr)
     
     def addLink(self, linkedZone):
@@ -42,26 +41,54 @@ class Zone:
 
     def setBaseValue(self):
         self.baseValue = 0.0
-        self.baseValue += self.platinum * Zone.platinumValue
+        if (self.visible == 0):
+            return
+        if (self.owner_id == my_id):
+            self.baseValue += self.mySpaceValue
+        if (self.owner_id == enemy_id):
+            self.baseValue += self.enemySpaceValue
+            self.baseValue += self.platinum * Zone.platinumValue
+        if (self.owner_id == -1):
+            self.baseValue += self.neutralSpaceValue
+            self.baseValue += self.platinum * Zone.platinumValue
+        
         self.baseValue += self.myPods * Zone.myPodValue
         self.baseValue += self.enemyPods * Zone.enemyPodValue
+        self.baseValue += self.myPods * Zone.myPodValue
+        self.baseValue += self.enemyPods * Zone.enemyPodValue
+
+    def setDerivedValue(self):
+        self.derivedValue = self.baseValue
+        if (self.visible == 0):
+            return
+
+        for link in self.linkList:
+            self.derivedValue += zoneList[link].baseValue * Zone.derivableValue
+        print("zone {} has {} of my pods, base value: {} and derived value: {}".format(self.zone_id, self.myPods, self.baseValue, self.derivedValue), file=sys.stderr)
+
         
     def movePods(self):
         #print("zone: {}, movePods: {}".format(self.zone_id, self.myPods), file=sys.stderr)
         for i in range(self.myPods):
-            self.linkList.sort(key=lambda x: zoneList[x].baseValue, reverse=True)
-            #print("movePod {} from zone {} to zone {}".format(i, self.zone_id, self.linkList[i % len(self.linkList)]), file=sys.stderr)
+            self.linkList.sort(key=lambda x: zoneList[x].derivedValue, reverse=True)
+            #print("movePod {} from zone {} to zone {} with value {}".format(i, self.zone_id, self.linkList[0], zoneList[self.linkList[0]].derivedValue), file=sys.stderr)
             print("1 {} {} ".format(self.zone_id, self.linkList[0]), end='')
-            zoneList[self.linkList[0]].baseValue -= 10
+            zoneList[self.linkList[0]].derivedValue /= 2
 #i % len(self.linkList)]
 # Auto-generated code below aims at helping you parse
 # the standard input according to the problem statement.
 
+zoneList = []
+moveList = ""
 # player_count: the amount of players (always 2)
 # my_id: my player ID (0 or 1)
 # zone_count: the amount of zones on the map
 # link_count: the amount of links between all zones
 player_count, my_id, zone_count, link_count = [int(i) for i in input().split()]
+enemy_id = 0
+if (my_id == 0):
+    enemy_id = 1
+
 for i in range(zone_count):
     # zone_id: this zone's ID (between 0 and zoneCount-1)
     # platinum_source: Because of the fog, will always be 0
@@ -86,6 +113,10 @@ while True:
         # platinum: the amount of Platinum this zone can provide (0 if hidden by fog)
         z_id, owner_id, pods_p0, pods_p1, visible, platinum = [int(j) for j in input().split()]
         zoneList[z_id].setTurnInfo(owner_id, pods_p0, pods_p1, visible, platinum)
+        zoneList[z_id].setBaseValue()
+    
+    for zone in zoneList:
+        zone.setDerivedValue()
 
     # Write an action using print
     # To debug: print("Debug messages...", file=sys.stderr)
@@ -95,4 +126,3 @@ while True:
     # first line for movement commands, second line no longer used (see the protocol in the statement for details)
     print("")
     print("WAIT")
-
