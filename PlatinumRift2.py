@@ -57,15 +57,22 @@ class Zone:
         self.baseValue += self.myPods * Zone.myPodValue
         self.baseValue += self.enemyPods * Zone.enemyPodValue
 
-    def setDerivedValue(self):
         self.derivedValue = self.baseValue
+
+    def setDerivedValue(self):
         if (self.visible == 0):
             return
 
         for link in self.linkList:
             self.derivedValue += zoneList[link].baseValue * Zone.derivableValue
-        print("zone {} has {} of my pods, base value: {} and derived value: {}".format(self.zone_id, self.myPods, self.baseValue, self.derivedValue), file=sys.stderr)
+        # print("zone {} has {} of my pods, base value: {} and derived value: {}".format(self.zone_id, self.myPods, self.baseValue, self.derivedValue), file=sys.stderr)
 
+    def setDerivedValue2(self):
+        if (self.visible == 0):
+            return
+
+        for link in self.linkList:
+            self.derivedValue += zoneList[link].derivedValue * Zone.derivableValue
         
     def movePods(self):
         #print("zone: {}, movePods: {}".format(self.zone_id, self.myPods), file=sys.stderr)
@@ -118,6 +125,9 @@ while True:
     for zone in zoneList:
         zone.setDerivedValue()
 
+    for zone in zoneList:
+        zone.setDerivedValue2()
+
     # Write an action using print
     # To debug: print("Debug messages...", file=sys.stderr)
     for i in range(zone_count):
@@ -126,3 +136,4 @@ while True:
     # first line for movement commands, second line no longer used (see the protocol in the statement for details)
     print("")
     print("WAIT")
+
